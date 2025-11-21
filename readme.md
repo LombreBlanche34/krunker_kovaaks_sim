@@ -1,0 +1,15 @@
+# what the fucking fuck is that
+- remove YOUR weapon sound when u shoot
+- add a pitch effect to all ur hitmarker (head and body)
+- add a kill sound and remove headshot sound
+
+### I strongly recommend you to use my mod `LombreKovaaksSim` for ur first time to understand what is really doing this script
+
+# Configuration
+with https://github.com/LombreBlanche34/krunker_scripts_settings you can tweak this script
+- kill sound
+- pitch effect
+
+The `kill sound you text color` and `kill sound you text username` is not to change his username and color in the chat ... i already see u coming into my DM "YOUR SCRIPT IS NOT WORKING I CANT CHANGE MY NAME"
+
+Basicly, the script is reading the chat, and when it detect a kill (text: You, color: White, by default) it trigger the kill sound, so u can change them if you have changed ur text color or anything
