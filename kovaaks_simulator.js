@@ -15,12 +15,14 @@
         // ==========================================
 
         const defaults = {
+            // Script status
+            lombre_kovaaks_simulator_status: true,
+            
             // Kovaaks Simulator settings
             lombre_kovaaks_simulator_reset_delay: 500,
             lombre_kovaaks_simulator_pitch_increment: 0.5,
             lombre_kovaaks_simulator_max_pitch: 10,
             lombre_kovaaks_simulator_hitmarker_sounds: '["hit_0", "crit_0", "crit_1"]',
-            lombre_kovaaks_simulator_status: 'on', // Ajouté ici
 
             // Kill sound settings
             lombre_kovaaks_simulator_kill_sound_sound_link: "https://files.catbox.moe/6w5695.mp3",
@@ -37,6 +39,17 @@
             }
         });
         if (firstStart) alert("Since its ur first time with kovaaks_simulator.js, the default mod to use is 'LombreKovaaksSim'");
+
+        // Check if script is enabled
+        const scriptStatus = localStorage.getItem('lombre_kovaaks_simulator_status');
+        const isEnabled = scriptStatus === 'true' || scriptStatus === true;
+        
+        if (!isEnabled) {
+            console.log("[LombreScripts] [Kovaaks_Simulator.js] Script is disabled (lombre_kovaaks_simulator_status = false)");
+            return; // Exit script
+        }
+
+        console.log("[LombreScripts] [Kovaaks_Simulator.js] Script is enabled");
 
         // Load configuration
         const config = {
@@ -189,15 +202,7 @@
         console.log("[LombreScripts] [Kovaaks_Simulator.js] === AUDIO SCRIPT READY ===");
     };
 
-    
-    const status = localStorage.getItem('lombre_kovaaks_simulator_status');
-    
-    
-    if (status === null || status === 'on') {
-        console.log("[LombreScripts] [Kovaaks_Simulator.js] Script enabled (status:", status === null ? 'default/on' : status, ")");
-        initScript();
-    } else {
-        console.log("[LombreScripts] [Kovaaks_Simulator.js] Script disabled (status: off)");
-    }
+    console.log("[LombreScripts] [Kovaaks_Simulator.js] Script enabled");
+    initScript();
 
 })();
