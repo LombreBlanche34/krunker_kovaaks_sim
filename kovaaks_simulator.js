@@ -69,7 +69,7 @@
             lombre_kovaaks_simulator_hitmarker_sounds: '["hit_0", "crit_0", "crit_1"]',
 
             // Kill sound settings
-            lombre_kovaaks_simulator_kill_sound_sound_link: "https://files.catbox.moe/6w5695.mp3",
+            lombre_kovaaks_simulator_kill_sound_volume: 0.5,
             lombre_kovaaks_simulator_kill_sound_you_text_color: '["rgb(255, 255, 255)", "#fff"]',
             lombre_kovaaks_simulator_kill_sound_you_text_username: "You"
         };
@@ -96,11 +96,15 @@
                 console.log(`[LombreScripts] [Kovaaks_Simulator.js] ${key} created with default value: ${defaults[key]}`);
             }
         });
-        if (firstStart) alert("Since its ur first time with kovaaks_simulator.js, the default mod to use is 'LombreKovaaksSim'");
+        if (firstStart) alert("Since its ur first time with kovaaks_simulator.js or the script have been updated, the default mod to use is 'LombreKovaaksHS'");
 
         // Check if script is enabled
         const scriptStatus = localStorage.getItem('lombre_kovaaks_simulator_status');
         const isEnabled = scriptStatus === 'true' || scriptStatus === true;
+
+        if (localStorage.getItem("lombre_kovaaks_simulator_kill_sound_sound_link")) {
+            localStorage.removeItem("lombre_kovaaks_simulator_kill_sound_sound_link")
+        }
 
         if (!isEnabled) {
             console.log("[LombreScripts] [Kovaaks_Simulator.js] Script is disabled (lombre_kovaaks_simulator_status = false)");
@@ -116,7 +120,7 @@
             MAX_PITCH: parseFloat(localStorage.getItem('lombre_kovaaks_simulator_max_pitch')),
             HITMARKER_SOUNDS: JSON.parse(localStorage.getItem('lombre_kovaaks_simulator_hitmarker_sounds')),
 
-            KILL_SOUND_LINK: localStorage.getItem('lombre_kovaaks_simulator_kill_sound_sound_link'),
+            KILL_VOLUME: parseFloat(localStorage.getItem('lombre_kovaaks_simulator_kill_sound_volume')),
             YOU_COLOR: JSON.parse(localStorage.getItem('lombre_kovaaks_simulator_kill_sound_you_text_color')),
             YOU_USERNAME: localStorage.getItem("lombre_kovaaks_simulator_kill_sound_you_text_username")
         };
@@ -154,9 +158,11 @@
         const originalPlay = window.SOUND.play;
 
         window.SOUND.play = function (soundName, volume, loop) {
-
-            // --- MUTE HEADSHOT_0 ---
-            if (soundName === 'headshot_0') {
+            if (soundName === "headshot_0") {
+                log(soundName, volume)
+            }
+            // --- MUTE REAL HEADSHOT_0 ---
+            if (soundName === 'headshot_0' && volume === undefined) {
                 console.log(`[LombreScripts] [Kovaaks_Simulator.js] Headshot sound blocked: ${soundName}`);
                 return; // Don't play the sound
             }
@@ -191,71 +197,64 @@
         console.log("[LombreScripts] [Kovaaks_Simulator.js] Local shots (vol=0.85) disabled");
         console.log("[LombreScripts] [Kovaaks_Simulator.js] Progressive pitch enabled for:", config.HITMARKER_SOUNDS.join(", "));
 
-        // ==========================================
-        // PART 3: KILL SOUND ON CHAT DETECTION
-        // ==========================================
+// ==========================================
+// PART 3: KILL SOUND ON CHAT DETECTION
+// ==========================================
 
-        // Preload the audio as soon as the script loads
-        const audioPreloaded = new Audio(config.KILL_SOUND_LINK);
-        audioPreloaded.preload = "auto";
-        audioPreloaded.load();
-        console.log("[LombreScripts] [Kovaaks_Simulator.js] Kill sound preloaded:", config.KILL_SOUND_LINK);
+// Function to play the kill sound using headshot_0
+function playKillSound() {
+    // Play the headshot_0 sound directly
+    window.SOUND.play('headshot_0', config.KILL_VOLUME, false); // Volume à 1.0, pas de boucle
+    console.log(`[LombreScripts] [Kovaaks_Simulator.js] Kill sound (headshot_0) played`);
+}
 
-        function playKillSound() {
-            // Clone the preloaded audio to allow multiple rapid plays
-            const audio = audioPreloaded.cloneNode();
-            audio.play().catch(err => console.error("[LombreScripts] [Kovaaks_Simulator.js] Audio playback error:", err));
-            console.log(`[LombreScripts] [Kovaaks_Simulator.js] Kill sound played`);
-        }
+function observeChat() {
+    const chatContainer = document.querySelector("#chatList");
 
-        function observeChat() {
-            const chatContainer = document.querySelector("#chatList");
+    if (!chatContainer) {
+        console.log("[LombreScripts] [Kovaaks_Simulator.js] Chat container not found, retrying in 1s...");
+        setTimeout(observeChat, 1000);
+        return;
+    }
 
-            if (!chatContainer) {
-                console.log("[LombreScripts] [Kovaaks_Simulator.js] Chat container not found, retrying in 1s...");
-                setTimeout(observeChat, 1000);
-                return;
-            }
+    const mutationWatcher = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === "childList") {
+                mutation.addedNodes.forEach((newNode) => {
+                    if (newNode.nodeType === 1 && newNode.tagName === "DIV") {
+                        const messageSpan = newNode.querySelector("span.chatMsg");
+                        if (messageSpan) {
+                            const coloredSpans = messageSpan.querySelectorAll("span[style*='color:#'], span[style*='color: rgb']");
 
-            const mutationWatcher = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.type === "childList") {
-                        mutation.addedNodes.forEach((newNode) => {
-                            if (newNode.nodeType === 1 && newNode.tagName === "DIV") {
-                                const messageSpan = newNode.querySelector("span.chatMsg");
-                                if (messageSpan) {
-                                    const coloredSpans = messageSpan.querySelectorAll("span[style*='color:#'], span[style*='color: rgb']");
+                            if (coloredSpans.length > 0) {
+                                const firstColoredSpan = coloredSpans[0];
+                                const spanColor = firstColoredSpan.style.color.trim().toLowerCase();
+                                const spanText = firstColoredSpan.textContent.trim();
 
-                                    if (coloredSpans.length > 0) {
-                                        const firstColoredSpan = coloredSpans[0];
-                                        const spanColor = firstColoredSpan.style.color.trim().toLowerCase();
-                                        const spanText = firstColoredSpan.textContent.trim();
-
-                                        console.log(`[LombreScripts] [Kovaaks_Simulator.js] Checking: "${spanText}" with color "${spanColor}"`);
-
-                                        if (config.YOU_COLOR.includes(spanColor) && spanText === config.YOU_USERNAME) {
-                                            console.log("[LombreScripts] [Kovaaks_Simulator.js] Kill detected!");
-                                            playKillSound();
-                                        }
-                                    }
+                                console.log(`[LombreScripts] [Kovaaks_Simulator.js] Checking: "${spanText}" with color "${spanColor}"`);
+                                if (config.YOU_COLOR.includes(spanColor) && spanText === config.YOU_USERNAME) {
+                                    console.log("[LombreScripts] [Kovaaks_Simulator.js] Kill detected!");
+                                    playKillSound();
                                 }
                             }
-                        });
+                        }
                     }
                 });
-            });
+            }
+        });
+    });
 
-            mutationWatcher.observe(chatContainer, {
-                childList: true
-            });
+    mutationWatcher.observe(chatContainer, {
+        childList: true
+    });
 
-            console.log("[LombreScripts] [Kovaaks_Simulator.js] Chat observer initialized");
-        }
+    console.log("[LombreScripts] [Kovaaks_Simulator.js] Chat observer initialized");
+}
 
-        // Start observing chat after a delay
-        setTimeout(() => {
-            observeChat();
-        }, 3000);
+// Start observing chat after a delay
+setTimeout(() => {
+    observeChat();
+}, 3000);
 
         console.log("[LombreScripts] [Kovaaks_Simulator.js] === AUDIO SCRIPT READY ===");
     };
