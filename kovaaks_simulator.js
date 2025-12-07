@@ -54,7 +54,7 @@
         // CONFIGURATION & DEFAULTS
         // ==========================================
 
-        const VERSION = "1.0.0";
+        const VERSION = "1.0.1";
         localStorage.setItem("lombre_kovaaks_simulator_version", VERSION);
 
 
